@@ -2,6 +2,33 @@
 
 This project focuses on integrating `GeoJSON` data from the `PDOK` (Publieke Dienstverlening Op de Kaart) service to build interactive charts. The aim is to create one (or several) scripts that automate the process from data download through database management, and ultimately to data visualization. By leveraging `PDOK`'s `GeoJSON` data, the project will demonstrate how to efficiently handle geospatial information and use it to create meaningful visual representations.
 
+## Get this repo up and running
+
+Make sure these are all installed on your machine: 
+- Minikube
+- PostgreSQL
+- Python
+- Helm
+
+1. Spin up this Bitnami PostgreSQL database in your local minikube:
+```
+https://github.com/bitnami/charts/tree/main/bitnami/postgresql
+```
+
+2. Once the database is up and running in minikube, give it a port forward to expose the service to your localhost.
+
+3. Retrieve the base64 password for your Bitnami database, decode it and store it inside `.env`.
+
+4. Run the scripts you want:
+```zsh
+python <script-you-want-to-execute>
+```
+
+5. Or spin up the front-end and interact with the charts:
+```zsh
+npm run dev
+```
+
 ## Understanding XML, GML and PDOK's URL building
 
 ### Part 1 - The XML Structure
