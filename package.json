@@ -1,0 +1,11 @@
+{
+  "name": "pdok-charting",
+  "version": "1.0.0",
+  "description": "This project focuses on integrating `GeoJSON` data from the `PDOK` (Publieke Dienstverlening Op de Kaart) service to build interactive charts.",
+  "main": "index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "author": "markbolier",
+  "license": "ISC"
+}
