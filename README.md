@@ -4,13 +4,15 @@ This project focuses on integrating `GeoJSON` data from the `PDOK` (Publieke Die
 
 ## Get this repo up and running
 
-Make sure these are all installed on your machine: 
+Make sure these are all installed on your machine:
+
 - Minikube
 - PostgreSQL
 - Python
 - Helm
 
 1. Spin up this Bitnami PostgreSQL database in your local minikube:
+
 ```
 https://github.com/bitnami/charts/tree/main/bitnami/postgresql
 ```
@@ -20,11 +22,13 @@ https://github.com/bitnami/charts/tree/main/bitnami/postgresql
 3. Retrieve the base64 password for your Bitnami database, decode it and store it inside `.env`.
 
 4. Run the scripts you want:
+
 ```zsh
 python <script-you-want-to-execute>
 ```
 
 5. Or spin up the front-end and interact with the charts:
+
 ```zsh
 npm run dev
 ```
@@ -32,6 +36,7 @@ npm run dev
 ## Understanding XML, GML and PDOK's URL building
 
 ### Part 1 - The XML Structure
+
 The `XML` format used by `PDOK` (Publieke Dienstverlening Op de Kaart) for its `WFS` (Web Feature Service) responses is based on the Geography Markup Language (`GML`). Here’s a brief overview of the `XML` structure:
 
 1. **Root Element**: The root element of the `XML` response is typically `<gml:FeatureCollection>`. This element contains all the feature data.
@@ -65,7 +70,9 @@ The `XML` format used by `PDOK` (Publieke Dienstverlening Op de Kaart) for its `
       </gml:properties>
     </gml:featureMember>
 ```
+
 ### Part 2 - How PDOK builds the URL
+
 The URL used to request data from `PDOK`’s `WFS` service follows a specific pattern. Here’s a breakdown of the URL components:
 
 1. **Base URL**: This is the endpoint of the `PDOK` `WFS` service.
@@ -75,6 +82,7 @@ https://service.pdok.nl/lv/bag/wfs/v2_0
 ```
 
 2. **Query Parameters**: These parameters specify the details of the request. They are appended to the base URL and include:
+
 - `service`: Specifies the service type. For `WFS`, this is always `WFS`.
 - `version`: Indicates the `WFS` version. The example uses `2.0.0`.
 - `request`: Defines the type of request. For data retrieval, this is `GetFeature`.
@@ -88,6 +96,7 @@ https://service.pdok.nl/lv/bag/wfs/v2_0?service=WFS&version=2.0.0&request=GetFea
 ```
 
 ### Part 3 - Differences between JSON and GML
+
 - Data Format: `JSON` is text-based and uses key-value pairs, while `GML` is `XML`-based and uses a markup language structure.
 - Purpose: `JSON` is a general-purpose data interchange format, while `GML` is specifically designed for geospatial data.
 - Complexity: `JSON` is generally simpler and more compact compared to `XML`-based `GML`.
@@ -97,6 +106,7 @@ https://service.pdok.nl/lv/bag/wfs/v2_0?service=WFS&version=2.0.0&request=GetFea
 Use `JSON` (or `GeoJSON`) if you need a lightweight, easy-to-use format for web applications or simple data interchange. Use `GML` if you require a detailed and standardized format for complex geospatial data and need compatibility with `GIS` systems.
 
 ## Enable PostGIS in your PostgreSQL database
+
 You need to enable the PostGIS extension in your PostgreSQL database. PostGIS provides the GEOMETRY type and other spatial functions.
 
 Here’s how you can enable PostGIS:
