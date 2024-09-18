@@ -19,7 +19,11 @@ https://github.com/bitnami/charts/tree/main/bitnami/postgresql
 
 2. Once the database is up and running in minikube, give it a port forward to expose the service to your localhost.
 
-3. Retrieve the base64 password for your Bitnami database, decode it and store it inside `.env`.
+3. Retrieve the base64 password for your Bitnami database, decode it and store it inside `.env`:
+
+```
+kubectl get secret --namespace ory bitnami-db-postgresql -o jsonpath="{.data.postgres-password}" | base64 -d
+```
 
 4. Run the scripts you want:
 
