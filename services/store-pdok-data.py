@@ -1,6 +1,7 @@
 import os
 import psycopg2
 import requests
+import json
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -14,26 +15,17 @@ user = os.getenv('DB_USER')
 password = os.getenv('DB_PASSWORD')
 
 # SQL queries
-# enable_postgis_query = """
-# DO $$
-# BEGIN
-#     IF NOT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'postgis') THEN
-#         CREATE EXTENSION postgis;
-#     END IF;
-# END
-# $$;
-# """
-
+drop_table_query = "DROP TABLE IF EXISTS public.woonplaats;"  # Query to drop the table if it exists
 create_table_query = """
-CREATE TABLE IF NOT EXISTS woonplaats (
+CREATE TABLE public.woonplaats (
     id SERIAL PRIMARY KEY,
-    name TEXT
+    name TEXT,
+    geom GEOMETRY(Geometry, 4326)  -- Store geometries in WGS84
 );
 """
-
 insert_query = """
-INSERT INTO woonplaats (name)
-VALUES (%s);
+INSERT INTO public.woonplaats (name, geom)
+VALUES (%s, ST_Transform(ST_SetSRID(ST_GeomFromGeoJSON(%s), 28992), 4326));  -- Transform from EPSG:28992 to EPSG:4326
 """
 
 # Fetch data from the URL
@@ -49,7 +41,6 @@ data = response.json()
 features = data.get('features', [])
 
 # Connect to PostgreSQL and execute queries
-# Todo: Use python's with ... as syntax for this?
 connection = None
 cursor = None
 
@@ -62,30 +53,41 @@ try:
         password=password
     )
     cursor = connection.cursor()
-
-    # Enable PostGIS (do this later)
-    # try:
-    #     cursor.execute(enable_postgis_query)
-    #     connection.commit()
-    #     print("PostGIS extension enabled.")
-    # except psycopg2.Error as e:
-    #     print(f"Error enabling PostGIS: {e}")
     
-    # # Create table
+    # Drop the table if it exists
+    cursor.execute(drop_table_query)
+    connection.commit()
+    print("Table dropped successfully.")
+
+    # Create table
     cursor.execute(create_table_query)
     connection.commit()
-    print("Table created or already exists.")
+    print("Table created successfully.")
 
-    # # Insert data
+    # Insert data
     for feature in features:
         try:
+            # Get 'name' and 'geometry'
             name = feature['properties'].get('woonplaats', 'Unknown')
-            cursor.execute(insert_query, (name,))
+            geometry = feature.get('geometry')
+
+            # Check if geometry is valid
+            if geometry is None:
+                print(f"Warning: No geometry found for feature with name '{name}'. Skipping this feature.")
+                continue  # Skip to the next feature
+
+            # Convert the geometry dictionary to a valid GeoJSON string
+            geometry_json = json.dumps(geometry)
+
+            # Insert name and geometry into the table
+            cursor.execute(insert_query, (name, geometry_json))
+        
         except Exception as e:
-            print(f"Error inserting feature: {e}")
+            print(f"Error inserting feature '{name}': {e}")
+            connection.rollback()  # Rollback for this specific insert
 
     connection.commit()
-    print("Data succesfully inserted.")
+    print("Data successfully inserted.")
 
 except psycopg2.Error as e:
     print("Database error:", e)
@@ -93,8 +95,8 @@ except psycopg2.Error as e:
 except Exception as e:
     print("General error:", e)
 
+# Ensure that the cursor and connection are closed
 finally:
-    # Ensure that the cursor and connection are closed
     if cursor:
         cursor.close()
     if connection:
