@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PDOK Charting</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+      #map {
+        height: 600px;
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+      // Initialize the map
+      const map = L.map("map").setView([52.3676, 4.9041], 10); // Center to your area
+
+      // Add a tile layer
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: "© OpenStreetMap",
+      }).addTo(map);
+
+      // Fetch data from the WFS endpoint
+      fetch("/wfs?request=GetFeature&typeName=woonplaats")
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Network response was not ok");
+          }
+          return response.json();
+        })
+        .then((data) => {
+          console.log(data); // Inspect the data
+          if (data.features.length === 0) {
+            console.log("No features found.");
+          } else {
+            L.geoJSON(data, {
+              onEachFeature: (feature, layer) => {
+                layer.bindPopup(
+                  `ID: ${feature.properties.id}<br>Woonplaats: ${feature.properties.woonplaats}`
+                );
+              },
+            }).addTo(map);
+          }
+        })
+        .catch((error) => {
+          console.error("Error fetching data:", error);
+        });
+    </script>
+  </body>
+</html>
