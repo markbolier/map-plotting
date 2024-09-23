@@ -55,6 +55,58 @@ If you are using a script to set up your database, you can add this command to y
 enable_postgis_query = "CREATE EXTENSION IF NOT EXISTS postgis;"
 ```
 
+## Handling coordinate systems
+
+The `PDOK` (Publieke Dienstverlening Op de Kaart) platform provides geospatial data using various coordinate systems, which is crucial for ensuring compatibility with mapping libraries like Leaflet. PDOK data is typically served in the `RD New` (Rijksdriehoeksmeting) coordinate system, also known as `EPSG:28992`. However, for visualization in Leaflet, which by default uses the `WGS84` (EPSG:4326) system (latitude and longitude), it's often necessary to convert between these systems.
+
+### Converting RD New to WGS84 Directly with PostGIS
+
+When inserting `PDOK` data in the `RD New` (EPSG:28992) coordinate system into your `PostGIS` database, you can directly convert it to `WGS84` (EPSG:4326) using the `ST_Transform()` function.
+
+Here’s an example query that inserts data and converts the geometry in one step:
+
+```sql
+INSERT INTO my_geospatial_table (name, geom)
+VALUES (
+    'Location Name',
+    ST_Transform(
+        ST_SetSRID(ST_MakePoint(155000, 463000), 28992), -- RD New coordinates
+        4326  -- Convert to WGS84
+    )
+);
+```
+
+For `GeoJSON` data with `RD New` coordinates:
+
+```sql
+WITH geojson_data AS (
+    SELECT ST_SetSRID(ST_GeomFromGeoJSON('{"type": "Point", "coordinates": [155000, 463000]}'), 28992) AS geom
+)
+INSERT INTO my_geospatial_table (name, geom)
+SELECT 'Location Name', ST_Transform(geom, 4326) FROM geojson_data;
+```
+
+This method ensures your data is ready for tools like `Leaflet` in `WGS84` format during insertion.
+
+### Integrating with Leaflet
+
+Once you have converted `RD New` coordinates to `WGS84`, you can easily use them in `Leaflet`. Here's an example of how you would place a marker in `Leaflet` using the converted `latitude` and `longitude`:
+
+```js
+var map = L.map("map").setView([52.379189, 4.899431], 13);
+
+// Add OpenStreetMap tiles as the base layer
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  maxZoom: 19,
+}).addTo(map);
+
+// Add a marker at the converted coordinates
+L.marker([52.379189, 4.899431])
+  .addTo(map)
+  .bindPopup("A marker in Amsterdam!")
+  .openPopup();
+```
+
 ## Understanding XML, GML and PDOK's URL building
 
 ### Part 1 - The XML Structure
@@ -126,55 +178,3 @@ https://service.pdok.nl/lv/bag/wfs/v2_0?service=WFS&version=2.0.0&request=GetFea
 
 **Choosing Between JSON and GML**
 Use `JSON` (or `GeoJSON`) if you need a lightweight, easy-to-use format for web applications or simple data interchange. Use `GML` if you require a detailed and standardized format for complex geospatial data and need compatibility with `GIS` systems.
-
-## Handling coordinate systems
-
-The `PDOK` (Publieke Dienstverlening Op de Kaart) platform provides geospatial data using various coordinate systems, which is crucial for ensuring compatibility with mapping libraries like Leaflet. PDOK data is typically served in the `RD New` (Rijksdriehoeksmeting) coordinate system, also known as `EPSG:28992`. However, for visualization in Leaflet, which by default uses the `WGS84` (EPSG:4326) system (latitude and longitude), it's often necessary to convert between these systems.
-
-### Converting RD New to WGS84 Directly with PostGIS
-
-When inserting `PDOK` data in the `RD New` (EPSG:28992) coordinate system into your `PostGIS` database, you can directly convert it to `WGS84` (EPSG:4326) using the `ST_Transform()` function.
-
-Here’s an example query that inserts data and converts the geometry in one step:
-
-```sql
-INSERT INTO my_geospatial_table (name, geom)
-VALUES (
-    'Location Name',
-    ST_Transform(
-        ST_SetSRID(ST_MakePoint(155000, 463000), 28992), -- RD New coordinates
-        4326  -- Convert to WGS84
-    )
-);
-```
-
-For `GeoJSON` data with `RD New` coordinates:
-
-```sql
-WITH geojson_data AS (
-    SELECT ST_SetSRID(ST_GeomFromGeoJSON('{"type": "Point", "coordinates": [155000, 463000]}'), 28992) AS geom
-)
-INSERT INTO my_geospatial_table (name, geom)
-SELECT 'Location Name', ST_Transform(geom, 4326) FROM geojson_data;
-```
-
-This method ensures your data is ready for tools like `Leaflet` in `WGS84` format during insertion.
-
-### Integrating with Leaflet
-
-Once you have converted `RD New` coordinates to `WGS84`, you can easily use them in `Leaflet`. Here's an example of how you would place a marker in `Leaflet` using the converted `latitude` and `longitude`:
-
-```js
-var map = L.map("map").setView([52.379189, 4.899431], 13);
-
-// Add OpenStreetMap tiles as the base layer
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-  maxZoom: 19,
-}).addTo(map);
-
-// Add a marker at the converted coordinates
-L.marker([52.379189, 4.899431])
-  .addTo(map)
-  .bindPopup("A marker in Amsterdam!")
-  .openPopup();
-```
