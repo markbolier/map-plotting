@@ -25,16 +25,34 @@ https://github.com/bitnami/charts/tree/main/bitnami/postgresql
 kubectl get secret --namespace ory bitnami-db-postgresql -o jsonpath="{.data.postgres-password}" | base64 -d
 ```
 
-4. Run the scripts you want:
+4. Store the PDOK data in your database:
 
 ```zsh
 python <script-you-want-to-execute>
 ```
 
-5. Or spin up the front-end and interact with the charts:
+5. Spin up the API & front-end and interact with the charts:
 
 ```zsh
-npm run dev
+npm run start
+```
+
+## Enabling PostGIS in your PostgreSQL database
+
+You may need to enable the PostGIS extension in your PostgreSQL database. PostGIS provides the GEOMETRY type and other spatial functions.
+
+Here’s how you can enable PostGIS:
+
+Connect to your PostgreSQL database using psql or a database management tool. Run the following SQL command to create the PostGIS extension:
+
+```sql
+CREATE EXTENSION postgis;
+```
+
+If you are using a script to set up your database, you can add this command to your script before creating tables:
+
+```python
+enable_postgis_query = "CREATE EXTENSION IF NOT EXISTS postgis;"
 ```
 
 ## Understanding XML, GML and PDOK's URL building
@@ -109,20 +127,54 @@ https://service.pdok.nl/lv/bag/wfs/v2_0?service=WFS&version=2.0.0&request=GetFea
 **Choosing Between JSON and GML**
 Use `JSON` (or `GeoJSON`) if you need a lightweight, easy-to-use format for web applications or simple data interchange. Use `GML` if you require a detailed and standardized format for complex geospatial data and need compatibility with `GIS` systems.
 
-## Enable PostGIS in your PostgreSQL database
+## Handling coordinate systems
 
-You need to enable the PostGIS extension in your PostgreSQL database. PostGIS provides the GEOMETRY type and other spatial functions.
+The `PDOK` (Publieke Dienstverlening Op de Kaart) platform provides geospatial data using various coordinate systems, which is crucial for ensuring compatibility with mapping libraries like Leaflet. PDOK data is typically served in the `RD New` (Rijksdriehoeksmeting) coordinate system, also known as `EPSG:28992`. However, for visualization in Leaflet, which by default uses the `WGS84` (EPSG:4326) system (latitude and longitude), it's often necessary to convert between these systems.
 
-Here’s how you can enable PostGIS:
+### Converting RD New to WGS84 Directly with PostGIS
 
-Connect to your PostgreSQL database using psql or a database management tool. Run the following SQL command to create the PostGIS extension:
+When inserting `PDOK` data in the `RD New` (EPSG:28992) coordinate system into your `PostGIS` database, you can directly convert it to `WGS84` (EPSG:4326) using the `ST_Transform()` function.
+
+Here’s an example query that inserts data and converts the geometry in one step:
 
 ```sql
-CREATE EXTENSION postgis;
+INSERT INTO my_geospatial_table (name, geom)
+VALUES (
+    'Location Name',
+    ST_Transform(
+        ST_SetSRID(ST_MakePoint(155000, 463000), 28992), -- RD New coordinates
+        4326  -- Convert to WGS84
+    )
+);
 ```
 
-If you are using a script to set up your database, you can add this command to your script before creating tables:
+For `GeoJSON` data with `RD New` coordinates:
 
-```python
-enable_postgis_query = "CREATE EXTENSION IF NOT EXISTS postgis;"
+```sql
+WITH geojson_data AS (
+    SELECT ST_SetSRID(ST_GeomFromGeoJSON('{"type": "Point", "coordinates": [155000, 463000]}'), 28992) AS geom
+)
+INSERT INTO my_geospatial_table (name, geom)
+SELECT 'Location Name', ST_Transform(geom, 4326) FROM geojson_data;
+```
+
+This method ensures your data is ready for tools like `Leaflet` in `WGS84` format during insertion.
+
+### Integrating with Leaflet
+
+Once you have converted `RD New` coordinates to `WGS84`, you can easily use them in `Leaflet`. Here's an example of how you would place a marker in `Leaflet` using the converted `latitude` and `longitude`:
+
+```js
+var map = L.map("map").setView([52.379189, 4.899431], 13);
+
+// Add OpenStreetMap tiles as the base layer
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  maxZoom: 19,
+}).addTo(map);
+
+// Add a marker at the converted coordinates
+L.marker([52.379189, 4.899431])
+  .addTo(map)
+  .bindPopup("A marker in Amsterdam!")
+  .openPopup();
 ```

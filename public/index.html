@@ -34,7 +34,6 @@
           return response.json();
         })
         .then((data) => {
-          console.log(data); // Inspect the data
           if (data.features.length === 0) {
             console.log("No features found.");
           } else {
