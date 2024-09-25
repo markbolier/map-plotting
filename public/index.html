@@ -3,52 +3,195 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PDOK Charting</title>
+    <title>PDOK Charting: Leaflet and MapLibre</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link
+      href="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.css"
+      rel="stylesheet"
+    />
     <style>
-      #map {
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+      }
+      .map-container {
+        display: flex;
+        justify-content: space-between;
         height: 600px;
-        width: 100%;
+      }
+      #map-leaflet,
+      #map-maplibre {
+        width: 48%;
       }
     </style>
   </head>
   <body>
-    <div id="map"></div>
+    <div class="map-container">
+      <div id="map-leaflet"></div>
+      <div id="map-maplibre"></div>
+    </div>
+
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
     <script>
-      // Initialize the map
-      const map = L.map("map").setView([52.3676, 4.9041], 10); // Center to your area
+      const initMap = (mapId, center, zoom) => {
+        const map = L.map(mapId).setView(center, zoom);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          maxZoom: 19,
+          attribution: "© OpenStreetMap",
+        }).addTo(map);
+        return map;
+      };
 
-      // Add a tile layer
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19,
-        attribution: "© OpenStreetMap",
-      }).addTo(map);
+      const addGeoJSONLayerLeaflet = (map, url, layerOptions) => {
+        fetch(url)
+          .then((response) => {
+            if (!response.ok) throw new Error("Network response was not ok");
+            return response.json();
+          })
+          .then((data) => {
+            if (data.features.length === 0) {
+              console.log(`No features found for ${layerOptions.name}.`);
+              return;
+            }
+            L.geoJSON(data, layerOptions).addTo(map);
+          })
+          .catch((error) =>
+            console.error(`Error fetching ${layerOptions.name} data:`, error)
+          );
+      };
 
-      // Fetch data from the WFS endpoint
-      fetch("/wfs?request=GetFeature&typeName=woonplaats")
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error("Network response was not ok");
+      const addGeoJSONLayerMapLibre = (
+        map,
+        url,
+        sourceName,
+        layerId,
+        layerOptions
+      ) => {
+        fetch(url)
+          .then((response) => {
+            if (!response.ok) throw new Error("Network response was not ok");
+            return response.json();
+          })
+          .then((data) => {
+            if (!data.features || data.features.length === 0) {
+              console.log(`No features found for ${layerOptions.name}.`);
+              return;
+            }
+
+            // Add GeoJSON data as a source in MapLibre
+            map.addSource(sourceName, {
+              type: "geojson",
+              data: data, // The GeoJSON data from WFS
+            });
+
+            // Add a layer to visualize the data
+            map.addLayer({
+              id: layerId,
+              type: layerOptions.layerType,
+              source: sourceName,
+              paint: layerOptions.paint,
+            });
+
+            // Add popups on click
+            map.on("click", layerId, (e) => {
+              const coordinates = e.lngLat;
+              const description = `ID: ${
+                e.features[0].properties[layerOptions.idProperty]
+              }<br>Woonplaats: ${e.features[0].properties[layerOptions.name]}`;
+
+              new maplibregl.Popup()
+                .setLngLat(coordinates)
+                .setHTML(description)
+                .addTo(map);
+            });
+          })
+          .catch((error) =>
+            console.error(
+              `Error fetching or processing ${layerOptions.name} data:`,
+              error
+            )
+          );
+      };
+
+      const mapLeaflet = initMap("map-leaflet", [52.3676, 4.9041], 10);
+
+      // Woonplaats Layer
+      addGeoJSONLayerLeaflet(
+        mapLeaflet,
+        "/wfs?request=GetFeature&typeName=woonplaats",
+        {
+          name: "woonplaats",
+          onEachFeature: (feature, layer) => {
+            layer.bindPopup(
+              `ID: ${feature.properties.id}<br>Woonplaats: ${feature.properties.woonplaats}`
+            );
+          },
+        }
+      );
+
+      // Stedin Hoogspanningsstations Layer
+      addGeoJSONLayerLeaflet(
+        mapLeaflet,
+        "/wfs?request=GetFeature&typeName=stedin_hoogspanningsstations",
+        {
+          name: "stedin",
+          onEachFeature: (feature, layer) => {
+            layer.bindPopup(`ID: ${feature.properties.hoogspa_id}`);
+          },
+          style: {
+            color: "#ff0000",
+            weight: 2,
+            fillOpacity: 0.5,
+          },
+        }
+      );
+
+      // Initialize MapLibre Map with CartoDB Tiles
+      const maplibreMap = new maplibregl.Map({
+        container: "map-maplibre",
+        style: "https://demotiles.maplibre.org/style.json",
+        center: [4.9041, 52.3676],
+        zoom: 9,
+      });
+
+      maplibreMap.on("load", () => {
+        // Woonplaats Layer for MapLibre
+        addGeoJSONLayerMapLibre(
+          maplibreMap,
+          "/wfs?request=GetFeature&typeName=woonplaats",
+          "woonplaatsData",
+          "woonplaatsLayer",
+          {
+            name: "woonplaats",
+            layerType: "fill",
+            paint: {
+              "fill-color": "#ff0000",
+              "fill-opacity": 0.5,
+              "fill-outline-color": "#000000",
+            },
+            idProperty: "id",
           }
-          return response.json();
-        })
-        .then((data) => {
-          if (data.features.length === 0) {
-            console.log("No features found.");
-          } else {
-            L.geoJSON(data, {
-              onEachFeature: (feature, layer) => {
-                layer.bindPopup(
-                  `ID: ${feature.properties.id}<br>Woonplaats: ${feature.properties.woonplaats}`
-                );
-              },
-            }).addTo(map);
+        );
+
+        // Stedin Hoogspanningsstations Layer for MapLibre
+        addGeoJSONLayerMapLibre(
+          maplibreMap,
+          "/wfs?request=GetFeature&typeName=stedin_hoogspanningsstations",
+          "stedinData",
+          "stedinLayer",
+          {
+            name: "stedin",
+            layerType: "fill",
+            paint: {
+              "fill-color": "#FFFF00", // Match the color with Leaflet
+              "fill-opacity": 0.5,
+              "fill-outline-color": "#FFFF00", // Match the outline color
+            },
+            idProperty: "hoogspa_id",
           }
-        })
-        .catch((error) => {
-          console.error("Error fetching data:", error);
-        });
+        );
+      });
     </script>
   </body>
 </html>

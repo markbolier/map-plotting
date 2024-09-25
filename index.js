@@ -20,32 +20,45 @@ const pool = new Pool({
 // Serve static files from the "public" directory
 app.use(express.static(path.join(__dirname, "public")));
 
-// WFS Endpoint
+// WFS Endpoint for layers
 app.get("/wfs", async (req, res) => {
   const { request, typeName } = req.query;
 
-  if (request === "GetFeature" && typeName === "woonplaats") {
-    try {
-      const query = `
+  if (request === "GetFeature") {
+    let query;
+    let params = []; // Initialize as an empty array
+
+    if (typeName === "woonplaats") {
+      query = `
         SELECT id, name, ST_AsGeoJSON(geom) AS geometry
         FROM public.woonplaats;
       `;
-      const { rows } = await pool.query(query);
+    } else if (typeName === "stedin_hoogspanningsstations") {
+      query = `
+        SELECT hoogspa_id, ST_AsGeoJSON(geom) AS geometry
+        FROM public.stedin_hoogspanningsstations;
+      `;
+    } else {
+      return res.status(400).send("Invalid typeName");
+    }
 
-      const bpfResponse = {
+    try {
+      const { rows } = await pool.query(query, params); // Pass params as an empty array
+
+      const response = {
         type: "FeatureCollection",
         features: rows.map((row) => ({
           type: "Feature",
           properties: {
-            id: row.id,
-            woonplaats: row.name,
+            id: typeName === "woonplaats" ? row.id : row.hoogspa_id,
+            woonplaats: typeName === "woonplaats" ? row.name : undefined,
           },
-          geometry: JSON.parse(row.geometry), // Parse the GeoJSON string
+          geometry: JSON.parse(row.geometry),
         })),
       };
 
       res.setHeader("Content-Type", "application/json");
-      res.json(bpfResponse);
+      res.json(response);
     } catch (error) {
       console.error("Error querying database:", error);
       res.status(500).send("Internal Server Error");
