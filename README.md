@@ -93,16 +93,16 @@ This method ensures your data is ready for tools like `Leaflet` in `WGS84` forma
 Once you have converted `RD New` coordinates to `WGS84`, you can easily use them in `Leaflet` or `MapLibre`. Here's an example of how you would place a marker in `Leaflet` using the converted `latitude` and `longitude`:
 
 ```js
-var map = L.map("map").setView([52.379189, 4.899431], 13);
+const leafletMap = L.map("map").setView([52.379189, 4.899431], 13);
 
 // Add OpenStreetMap tiles as the base layer
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
   maxZoom: 19,
-}).addTo(map);
+}).addTo(leafletMap);
 
 // Add a marker at the converted coordinates
 L.marker([52.379189, 4.899431])
-  .addTo(map)
+  .addTo(leafletMap)
   .bindPopup("A marker in Amsterdam!")
   .openPopup();
 ```
@@ -124,6 +124,7 @@ new maplibregl.Marker()
   .addTo(maplibreMap)
   .setPopup(new maplibregl.Popup().setHTML("A marker in Amsterdam!"))
   .openPopup();
+```
 
 ## Understanding XML, GML and PDOK's URL building
 
