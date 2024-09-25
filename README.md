@@ -25,7 +25,7 @@ https://github.com/bitnami/charts/tree/main/bitnami/postgresql
 kubectl get secret --namespace ory bitnami-db-postgresql -o jsonpath="{.data.postgres-password}" | base64 -d
 ```
 
-4. Store the PDOK data in your database:
+4. Store the PDOK and Stedin data in your database:
 
 ```zsh
 python <script-you-want-to-execute>
@@ -88,9 +88,9 @@ SELECT 'Location Name', ST_Transform(geom, 4326) FROM geojson_data;
 
 This method ensures your data is ready for tools like `Leaflet` in `WGS84` format during insertion.
 
-### Integrating with Leaflet
+### Integrating with Leaflet or MapLibre
 
-Once you have converted `RD New` coordinates to `WGS84`, you can easily use them in `Leaflet`. Here's an example of how you would place a marker in `Leaflet` using the converted `latitude` and `longitude`:
+Once you have converted `RD New` coordinates to `WGS84`, you can easily use them in `Leaflet` or `MapLibre`. Here's an example of how you would place a marker in `Leaflet` using the converted `latitude` and `longitude`:
 
 ```js
 var map = L.map("map").setView([52.379189, 4.899431], 13);
@@ -107,6 +107,24 @@ L.marker([52.379189, 4.899431])
   .openPopup();
 ```
 
+And here's how you would do this in `MapLibre`:
+
+````js
+// Initialize a MapLibre Map
+const maplibreMap = new maplibregl.Map({
+  container: "map-maplibre",
+  style: "https://demotiles.maplibre.org/style.json",
+  center: [4.9041, 52.3676],
+  zoom: 9,
+});
+
+// Add a marker at the converted coordinates
+new maplibregl.Marker()
+  .setLngLat([52.379189, 4.899431])
+  .addTo(maplibreMap)
+  .setPopup(new maplibregl.Popup().setHTML("A marker in Amsterdam!"))
+  .openPopup();
+
 ## Understanding XML, GML and PDOK's URL building
 
 ### Part 1 - The XML Structure
@@ -119,7 +137,7 @@ The `XML` format used by `PDOK` (Publieke Dienstverlening Op de Kaart) for its `
 <gml:FeatureCollection xmlns:gml="http://www.opengis.net/gml">
   <!-- Feature elements go here -->
 </gml:FeatureCollection>
-```
+````
 
 2. **Feature Elements**: Each geographic feature is encapsulated in a `<gml:featureMember>` element. This element contains one or more `<gml:Point>`, `<gml:Polygon>`, or other `GML` geometric elements, depending on the type of data.
 
