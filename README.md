@@ -21,7 +21,7 @@ https://github.com/bitnami/charts/tree/main/bitnami/postgresql
 
 3. Retrieve the base64 password for your Bitnami database, decode it and store it inside `.env`:
 
-```
+```zsh
 kubectl get secret --namespace ory bitnami-db-postgresql -o jsonpath="{.data.postgres-password}" | base64 -d
 ```
 
@@ -109,7 +109,7 @@ L.marker([52.379189, 4.899431])
 
 And here's how you would do this in `MapLibre`:
 
-````js
+```js
 const maplibreMap = new maplibregl.Map({
   container: "map-maplibre",
   style: "https://demotiles.maplibre.org/style.json",
@@ -196,4 +196,3 @@ https://service.pdok.nl/lv/bag/wfs/v2_0?service=WFS&version=2.0.0&request=GetFea
 
 **Choosing Between JSON and GML**
 Use `JSON` (or `GeoJSON`) if you need a lightweight, easy-to-use format for web applications or simple data interchange. Use `GML` if you require a detailed and standardized format for complex geospatial data and need compatibility with `GIS` systems.
-````
