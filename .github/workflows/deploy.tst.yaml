@@ -1,0 +1,39 @@
+name: Deploy to testing environment (Minikube)
+
+on:
+  push:
+    branches:
+      - "*/*"
+  workflow_dispatch:
+
+jobs:
+  pdok_charting:
+    name: Deploy pdok-charting
+    runs-on: ubuntu-latest
+    environment: testing
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build container image
+        run: |
+          # Set docker environment to Minikube
+          eval $(minikube docker-env)
+          # Build the Docker image
+          docker build -f apps/pdok-charting/Dockerfile -t pdok-charting:latest .
+
+      - name: Apply Kubernetes configuration
+        run: |
+          # Set the Minikube context for kubectl
+          kubectl config use-context minikube
+
+          # Apply the Kubernetes resources
+          kubectl apply \
+            -f kubernetes/namespace.tst.yaml \
+            -f kubernetes/deployment.tst.yaml \
+            -f kubernetes/service.tst.yaml \
+            -f kubernetes/ingress.tst.yaml \
+            -n testing
+
+      - name: Verify deployment
+        run: kubectl rollout status deployment/pdok-charting -n testing
