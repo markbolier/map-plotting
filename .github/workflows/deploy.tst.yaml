@@ -20,7 +20,7 @@ jobs:
 
       - name: Build and push container image
         run: |
-          docker build -f pdok-charting/Dockerfile -t ghcr.io/markbolier/pdok-charting:latest .
+          docker build -f ./Dockerfile -t ghcr.io/markbolier/pdok-charting:latest .
           docker push ghcr.io/markbolier/pdok-charting:latest
 
       - name: Apply Kubernetes configuration
