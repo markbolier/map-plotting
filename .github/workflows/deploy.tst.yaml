@@ -27,8 +27,6 @@ jobs:
         run: |
           kubectl apply \
             -f kubernetes/namespace.tst.yaml \
-            -f kubernetes/deployment.tst.yaml \
-            -f kubernetes/service.tst.yaml \
             -f kubernetes/ingress.tst.yaml \
             -n testing
 
