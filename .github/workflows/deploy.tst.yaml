@@ -29,6 +29,7 @@ jobs:
             -f kubernetes/namespace.tst.yaml \
             -f kubernetes/ingress.tst.yaml \
             -n testing
+            --validate=false
 
       - name: Verify deployment
         run: kubectl rollout status deployment/pdok-charting -n testing
