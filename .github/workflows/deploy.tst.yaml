@@ -10,24 +10,35 @@ jobs:
   pdok_charting:
     name: Deploy pdok-charting
     runs-on: ubuntu-latest
-    environment: testing
+    container:
+      image: "kicbase/stable:v0.0.30" # Minikube Docker image
     steps:
+      - name: Install prerequisites
+        run: |
+          # Install kubectl, Docker CLI, and necessary tools
+          apt-get update && apt-get install -y conntrack socat
+          curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl
+          chmod +x ./kubectl
+          mv ./kubectl /usr/local/bin/kubectl
+
+      - name: Start Minikube
+        run: |
+          minikube start --driver=docker
+
+      - name: Set docker environment to Minikube
+        run: |
+          eval $(minikube docker-env)
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Build container image
+      - name: Build Docker image
         run: |
-          # Set docker environment to Minikube
-          eval $(minikube docker-env)
-          # Build the Docker image
           docker build -f apps/pdok-charting/Dockerfile -t pdok-charting:latest .
 
       - name: Apply Kubernetes configuration
         run: |
-          # Set the Minikube context for kubectl
           kubectl config use-context minikube
-
-          # Apply the Kubernetes resources
           kubectl apply \
             -f kubernetes/namespace.tst.yaml \
             -f kubernetes/deployment.tst.yaml \
