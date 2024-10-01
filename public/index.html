@@ -98,7 +98,7 @@
               const coordinates = e.lngLat;
               const description = `ID: ${
                 e.features[0].properties[layerOptions.idProperty]
-              }<br>Woonplaats: ${e.features[0].properties[layerOptions.name]}`;
+              }<br>Type: ${e.features[0].properties[layerOptions.name]}`;
 
               new maplibregl.Popup()
                 .setLngLat(coordinates)
@@ -147,6 +147,25 @@
         }
       );
 
+      // Add Riool- en Milieumanagementvoorzieningen Layer for Leaflet
+      addGeoJSONLayerLeaflet(
+        mapLeaflet,
+        "https://service.pdok.nl/rws/nutsdiensten-en-overheidsdiensten/riool-milieumanagementvoorzieningen/wfs/v1_0?request=GetFeature&service=WFS&version=1.1.0&outputFormat=application%2Fjson%3B%20subtype%3Dgeojson&typeName=nutsdiensten-en-overheidsdiensten:environmental_management_facility",
+        {
+          name: "riool_milieumanagementvoorzieningen",
+          onEachFeature: (feature, layer) => {
+            layer.bindPopup(
+              `ID: ${feature.properties.id}<br>Type: ${feature.properties.type}`
+            );
+          },
+          style: {
+            color: "#00ff00",
+            weight: 2,
+            fillOpacity: 0.5,
+          },
+        }
+      );
+
       // Initialize MapLibre Map with CartoDB Tiles
       const maplibreMap = new maplibregl.Map({
         container: "map-maplibre",
@@ -184,11 +203,29 @@
             name: "stedin",
             layerType: "fill",
             paint: {
-              "fill-color": "#FFFF00", // Match the color with Leaflet
+              "fill-color": "#FFFF00",
               "fill-opacity": 0.5,
-              "fill-outline-color": "#FFFF00", // Match the outline color
+              "fill-outline-color": "#FFFF00",
             },
             idProperty: "hoogspa_id",
+          }
+        );
+
+        // Update the MapLibre layer addition for Riool layer
+        addGeoJSONLayerMapLibre(
+          maplibreMap,
+          "https://service.pdok.nl/rws/nutsdiensten-en-overheidsdiensten/riool-milieumanagementvoorzieningen/wfs/v1_0?request=GetFeature&service=WFS&version=1.1.0&outputFormat=application%2Fjson%3B%20subtype%3Dgeojson&typeName=nutsdiensten-en-overheidsdiensten:environmental_management_facility",
+          "rioolData",
+          "rioolLayer",
+          {
+            name: "riool_milieumanagementvoorzieningen",
+            layerType: "circle",
+            paint: {
+              "circle-color": "#00FF00",
+              "circle-radius": 6,
+              "circle-opacity": 0.8,
+            },
+            idProperty: "id",
           }
         );
       });
