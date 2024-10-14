@@ -4,10 +4,8 @@ import requests
 import json
 from dotenv import load_dotenv
 
-# Load environment variables
 load_dotenv()
 
-# Database connection parameters
 db_params = {
     'host': os.getenv('DB_HOST'),
     'port': os.getenv('DB_PORT'),
@@ -30,19 +28,16 @@ INSERT INTO public.woonplaats (name, geom)
 VALUES (%s, ST_Transform(ST_SetSRID(ST_GeomFromGeoJSON(%s), 28992), 4326));
 """
 
-# Fetch data from the URL
 response = requests.get(
     "https://service.pdok.nl/lv/bag/wfs/v2_0?service=WFS&version=2.0.0&request=GetFeature&typeName=bag:woonplaats&outputFormat=application/json"
 )
 
-# Check response status
 if response.status_code != 200:
     print("Error fetching data:", response.status_code)
     exit()
 
 features = response.json().get('features', [])
 
-# Connect to PostgreSQL and execute queries
 try:
     with psycopg2.connect(**db_params) as conn:
         with conn.cursor() as cursor:

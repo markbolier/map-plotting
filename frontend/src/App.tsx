@@ -1,9 +1,13 @@
-import { MapContainer, TileLayer, GeoJSON } from "react-leaflet";
+import { GeoJSON } from "react-leaflet";
+import { LeafletMap } from "./components/leaflet-map/LeafletMap";
+import { MapLibreMap } from "./components/maplibre-map/MapLibreMap";
 import { useEffect, useState } from "react";
 import maplibregl from "maplibre-gl";
 
 function App() {
-  const [geoJsonLayers, setGeoJsonLayers] = useState<JSX.Element[]>([]);
+  const [geoJsonLayersLeaflet, setGeoJsonLayersLeaflet] = useState<
+    JSX.Element[]
+  >([]);
 
   useEffect(() => {
     const addGeoJSONLayerLeaflet = (url: string, layerOptions: any) => {
@@ -26,7 +30,7 @@ function App() {
               style={layerOptions.style}
             />
           );
-          setGeoJsonLayers((prev) => [...prev, geoJsonLayer]);
+          setGeoJsonLayersLeaflet((prev) => [...prev, geoJsonLayer]);
         })
         .catch((error) =>
           console.error(`Error fetching ${layerOptions.name} data:`, error)
@@ -189,27 +193,12 @@ function App() {
       className="map-container"
       style={{
         display: "flex",
-        height: "600px",
-        justifyContent: "space-between",
+        gap: "20px",
+        padding: "20px",
       }}
     >
-      {geoJsonLayers.length > 0 ? (
-        <MapContainer
-          center={[52.3676, 4.9041]}
-          zoom={10}
-          style={{ height: "600px", width: "600px" }}
-        >
-          <TileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            maxZoom={19}
-            attribution="© OpenStreetMap"
-          />
-          {geoJsonLayers}
-        </MapContainer>
-      ) : (
-        <div>Loading map...</div>
-      )}
-      <div id="map-maplibre" style={{ width: "48%", height: "600px" }}></div>
+      <LeafletMap geoJsonLayers={geoJsonLayersLeaflet} />
+      <MapLibreMap />
     </div>
   );
 }
