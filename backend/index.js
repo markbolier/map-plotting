@@ -14,7 +14,6 @@ const pool = new Pool({
   user: process.env.DB_USER,
 });
 
-// WFS Endpoint for layers
 app.get("/wfs", async (req, res) => {
   const { request, typeName } = req.query;
 
@@ -57,7 +56,6 @@ app.get("/wfs", async (req, res) => {
   }
 });
 
-// Start the server
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });

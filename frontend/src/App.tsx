@@ -1,8 +1,10 @@
 import { GeoJSON } from "react-leaflet";
-import { LeafletMap } from "./components/leaflet-map/LeafletMap";
-import { MapLibreMap } from "./components/maplibre-map/MapLibreMap";
 import { useEffect, useState } from "react";
 import maplibregl from "maplibre-gl";
+
+import { getGeoJSONData } from "./services/get-geojson-data";
+import { LeafletMap } from "./components/leaflet-map/LeafletMap";
+import { MapLibreMap } from "./components/maplibre-map/MapLibreMap";
 
 function App() {
   const [geoJsonLayersLeaflet, setGeoJsonLayersLeaflet] = useState<
@@ -10,69 +12,59 @@ function App() {
   >([]);
 
   useEffect(() => {
-    const addGeoJSONLayerLeaflet = (url: string, layerOptions: any) => {
-      fetch(url)
-        .then((response) => {
-          if (!response.ok) throw new Error("Network response was not ok");
-          return response.json();
-        })
-        .then((data) => {
-          if (data.features.length === 0) {
-            console.log(`No features found for ${layerOptions.name}.`);
-            return;
-          }
+    const addGeoJSONLayerLeaflet = async (url: string, layerOptions: any) => {
+      try {
+        const data = await getGeoJSONData(url);
+        if (data.features.length === 0) {
+          console.log(`No features found for ${layerOptions.name}.`);
+          return;
+        }
 
-          const geoJsonLayer = (
-            <GeoJSON
-              key={layerOptions.name}
-              data={data}
-              onEachFeature={layerOptions.onEachFeature}
-              style={layerOptions.style}
-            />
-          );
-          setGeoJsonLayersLeaflet((prev) => [...prev, geoJsonLayer]);
-        })
-        .catch((error) =>
-          console.error(`Error fetching ${layerOptions.name} data:`, error)
+        const geoJsonLayer = (
+          <GeoJSON
+            key={layerOptions.name}
+            data={data}
+            onEachFeature={layerOptions.onEachFeature}
+            style={layerOptions.style}
+          />
         );
+        setGeoJsonLayersLeaflet((prev) => [...prev, geoJsonLayer]);
+      } catch (error) {
+        console.error(`Error fetching ${layerOptions.name} data:`, error);
+      }
     };
 
-    const addGeoJSONLayerMapLibre = (
+    const addGeoJSONLayerMapLibre = async (
       map: maplibregl.Map,
       url: string,
       sourceName: string,
       layerId: string,
       layerOptions: any
     ) => {
-      fetch(url)
-        .then((response) => {
-          if (!response.ok) throw new Error("Network response was not ok");
-          return response.json();
-        })
-        .then((data) => {
-          if (!data.features || data.features.length === 0) {
-            console.log(`No features found for ${layerOptions.name}.`);
-            return;
-          }
+      try {
+        const data = await getGeoJSONData(url);
+        if (!data.features || data.features.length === 0) {
+          console.log(`No features found for ${layerOptions.name}.`);
+          return;
+        }
 
-          map.addSource(sourceName, {
-            type: "geojson",
-            data: data,
-          });
+        map.addSource(sourceName, {
+          type: "geojson",
+          data: data,
+        });
 
-          map.addLayer({
-            id: layerId,
-            type: layerOptions.layerType,
-            source: sourceName,
-            paint: layerOptions.paint,
-          });
-        })
-        .catch((error) =>
-          console.error(
-            `Error fetching or processing ${layerOptions.name} data:`,
-            error
-          )
+        map.addLayer({
+          id: layerId,
+          type: layerOptions.layerType,
+          source: sourceName,
+          paint: layerOptions.paint,
+        });
+      } catch (error) {
+        console.error(
+          `Error fetching or processing ${layerOptions.name} data:`,
+          error
         );
+      }
     };
 
     // Call addGeoJSONLayerLeaflet for each layer
