@@ -1,24 +1,12 @@
-import { useEffect } from "react";
-import L, { Map } from "leaflet";
+import { MapContainer, TileLayer, GeoJSON } from "react-leaflet";
+import { useEffect, useState } from "react";
 import maplibregl from "maplibre-gl";
 
 function App() {
+  const [geoJsonLayers, setGeoJsonLayers] = useState<JSX.Element[]>([]);
+
   useEffect(() => {
-    const initMap = (mapId: string, center: [number, number], zoom: number) => {
-      const map = L.map(mapId).setView(center, zoom);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19,
-        attribution: "© OpenStreetMap",
-      }).addTo(map);
-
-      return map;
-    };
-
-    const addGeoJSONLayerLeaflet = (
-      map: Map,
-      url: string,
-      layerOptions: any
-    ) => {
+    const addGeoJSONLayerLeaflet = (url: string, layerOptions: any) => {
       fetch(url)
         .then((response) => {
           if (!response.ok) throw new Error("Network response was not ok");
@@ -29,7 +17,16 @@ function App() {
             console.log(`No features found for ${layerOptions.name}.`);
             return;
           }
-          L.geoJSON(data, layerOptions).addTo(map);
+
+          const geoJsonLayer = (
+            <GeoJSON
+              key={layerOptions.name}
+              data={data}
+              onEachFeature={layerOptions.onEachFeature}
+              style={layerOptions.style}
+            />
+          );
+          setGeoJsonLayers((prev) => [...prev, geoJsonLayer]);
         })
         .catch((error) =>
           console.error(`Error fetching ${layerOptions.name} data:`, error)
@@ -74,11 +71,8 @@ function App() {
         );
     };
 
-    const mapLeaflet = initMap("map-leaflet", [52.3676, 4.9041], 10);
-
-    // Woonplaats Layer
+    // Call addGeoJSONLayerLeaflet for each layer
     addGeoJSONLayerLeaflet(
-      mapLeaflet,
       "http://localhost:3000/wfs?request=GetFeature&typeName=woonplaats",
       {
         name: "woonplaats",
@@ -90,9 +84,7 @@ function App() {
       }
     );
 
-    // Stedin Hoogspanningsstations Layer
     addGeoJSONLayerLeaflet(
-      mapLeaflet,
       "http://localhost:3000/wfs?request=GetFeature&typeName=stedin_hoogspanningsstations",
       {
         name: "stedin",
@@ -107,9 +99,7 @@ function App() {
       }
     );
 
-    // Add Riool- en Milieumanagementvoorzieningen Layer for Leaflet
     addGeoJSONLayerLeaflet(
-      mapLeaflet,
       "https://service.pdok.nl/rws/nutsdiensten-en-overheidsdiensten/riool-milieumanagementvoorzieningen/wfs/v1_0?request=GetFeature&service=WFS&version=1.1.0&outputFormat=application%2Fjson%3B%20subtype%3Dgeojson&typeName=nutsdiensten-en-overheidsdiensten:environmental_management_facility",
       {
         name: "riool_milieumanagementvoorzieningen",
@@ -190,7 +180,6 @@ function App() {
     });
 
     return () => {
-      mapLeaflet.remove();
       maplibreMap.remove();
     };
   }, []);
@@ -204,7 +193,22 @@ function App() {
         justifyContent: "space-between",
       }}
     >
-      <div id="map-leaflet" style={{ width: "48%", height: "600px" }}></div>
+      {geoJsonLayers.length > 0 ? (
+        <MapContainer
+          center={[52.3676, 4.9041]}
+          zoom={10}
+          style={{ height: "600px", width: "600px" }}
+        >
+          <TileLayer
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            maxZoom={19}
+            attribution="© OpenStreetMap"
+          />
+          {geoJsonLayers}
+        </MapContainer>
+      ) : (
+        <div>Loading map...</div>
+      )}
       <div id="map-maplibre" style={{ width: "48%", height: "600px" }}></div>
     </div>
   );
