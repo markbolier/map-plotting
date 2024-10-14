@@ -1,7 +1,7 @@
 {
-  "name": "pdok-charting",
+  "name": "map-plotting",
   "version": "1.0.0",
-  "description": "This project focuses on integrating `GeoJSON` data from the `PDOK` (Publieke Dienstverlening Op de Kaart) service to build interactive charts.",
+  "description": "This project leverages GeoJSON data from PDOK and Stedin to build interactive map layers.",
   "main": "index.js",
   "scripts": {
     "test": "test",

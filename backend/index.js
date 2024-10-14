@@ -14,9 +14,6 @@ const pool = new Pool({
   user: process.env.DB_USER,
 });
 
-// Serve static files
-app.use(express.static(path.join(__dirname, "public")));
-
 // WFS Endpoint for layers
 app.get("/wfs", async (req, res) => {
   const { request, typeName } = req.query;
