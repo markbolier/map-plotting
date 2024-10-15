@@ -1,6 +1,6 @@
-# Using PDOK GeoJSON data for chart visualization
+# Using PDOK GeoJSON data for visualizing map layers
 
-This project focuses on integrating `GeoJSON` data from the `PDOK` (Publieke Dienstverlening Op de Kaart) service to build interactive charts. The aim is to create one (or several) scripts that automate the process from data download through database management, and ultimately to data visualization. By leveraging `PDOK`'s `GeoJSON` data, the project will demonstrate how to efficiently handle geospatial information and use it to create meaningful visual representations.
+This project focuses on leveraging `GeoJSON` data from the `PDOK` (Publieke Dienstverlening Op de Kaart) service to build interactive map layers. The aim is to create one (or several) scripts that automate the process from data download through database management, and ultimately to data visualization. By leveraging `PDOK`'s `GeoJSON` data, the project will demonstrate how to efficiently handle geospatial information and use it to create meaningful visual representations.
 
 ## Get this repo up and running
 
